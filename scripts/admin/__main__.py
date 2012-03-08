@@ -7,51 +7,69 @@ import datetime
 import shutil
 import config
 
-def data_path(depname, *args):
+# General utilities
+def data_path(*args):
     """
-    Get path to a deployment data directory or file. Just wraps
-    os.path.join and ensures you have specified a deployment name.
+    Get path to a data directory or file. Just wraps
+    os.path.join.
     """
-    return os.path.join(os.getcwd(), 'data', depname, *args)
+    return os.path.join(os.getcwd(), 'data', *args)
 
-def get_depname(cmd):
+def ensure_dir_exists(p):
+    '''Ensure a directory exists, creating it if it doesn't'''
+    if not os.path.exists(p): os.makedirs(p)
+
+def load_config(*args):
     """
-    Extract the dependency
+    Load the configuration from the given data path,
+    e.g. load_config('foo', 'bar') loads data_base/foo/bar/config.py
     """
-    if len(sys.argv) < 3:
-        command_help([cmd])
+    config.load_config( data_path(os.path.join(*args), 'config.py') )
+
+
+# Package utilities
+def package_path(package, *args):
+    '''
+    Get path to a package data directory or file.
+    '''
+    return data_path('packages', package, *args)
+
+def package_load_config(package):
+    """
+    Load the configuration for the given package
+    """
+    load_config('packages', package)
+
+
+
+# Package commands
+
+def command_package_init(*args):
+    """
+    admin package init package_name
+
+    Initialize a new package of Sirikata. Packages are a build of
+    Sirikata you might want to execute multiple services from. This
+    command sets up the basic directory structure for a package,
+    including a customizable configuration file which you probably
+    want to edit after running this command.
+    """
+
+    if len(args) == 0:
+        print 'No package name specified'
         return -1
-    return sys.argv[2]
-
-def command_init():
-    """
-    admin init deployment_name
-
-    Initialize a new deployment with the given name. This sets up some
-    basic directory structures and data. You can edit the configuration
-    """
-    depname = get_depname('init')
-    if depname < 0: return depname
+    packname = args[0]
 
     # Setup build, install, and data directories
-    if not os.path.exists(data_path(depname)): os.makedirs(data_path(depname))
-    if not os.path.exists(data_path(depname, 'build')): os.makedirs(data_path(depname, 'build'))
-    if not os.path.exists(data_path(depname, 'installed')): os.makedirs(data_path(depname, 'installed'))
-    if not os.path.exists(data_path(depname, 'data')): os.makedirs(data_path(depname, 'data'))
+    ensure_dir_exists(package_path(packname))
 
     # Touch an empty config.py where the user can adjust settings
-    config_py_file = open(data_path(depname, 'config.py'), 'w')
+    config_py_file = open(package_path(packname, 'config.py'), 'w')
     config_py_file.close()
 
     return 0
 
-def load_config(depname):
-    """
-    Load the configuration for the given deployment.
-    """
-    config.load_config( data_path(depname, 'config.py') )
-
-def command_build():
+def command_package_build(*args):
     """
     admin build deployment_name
 
@@ -60,19 +78,21 @@ def command_build():
     to update the code or dependencies.
     """
 
-    depname = get_depname('build')
-    if depname < 0: return depname
-    load_config(depname)
+    if len(args) == 0:
+        print 'No package name specified'
+        return -1
+    packname = args[0]
+    package_load_config(packname)
 
-    builddir = data_path(depname, config.build_dir_name)
+    builddir = package_path(packname, config.build_dir_name)
     depsdir = os.path.join(builddir, 'dependencies')
     buildcmakedir = os.path.join(builddir, 'build', 'cmake')
-    installdir = data_path(depname, config.install_dir_name)
+    installdir = package_path(packname, config.install_dir_name)
 
     try:
         # If nothing is there yet, do checkout and build dependencies
-        if not os.path.exists(data_path(depname, config.build_dir_name, '.git')):
-            subprocess.check_call(['git', 'clone', config.repository, data_path(depname, config.build_dir_name)])
+        if not os.path.exists(package_path(packname, config.build_dir_name, '.git')):
+            subprocess.check_call(['git', 'clone', config.repository, package_path(packname, config.build_dir_name)])
             subprocess.check_call(['make', 'update-dependencies'], cwd=builddir)
             subprocess.check_call(['make'] + config.dependencies_targets, cwd=depsdir)
 
@@ -88,7 +108,7 @@ def command_build():
         return -1
 
 
-def command_install():
+def command_package_install(*args):
     """
     admin install deployment_name url
 
@@ -96,17 +116,19 @@ def command_install():
     building and installing locally.
     """
 
-    depname = get_depname('build')
-    if depname < 0: return depname
-    load_config(depname)
+    if len(args) == 0:
+        print 'No package name specified'
+        return -1
+    packname = args[0]
+    package_load_config(packname)
 
-    if len(sys.argv) < 4:
+    if len(args) < 2:
         print "Must specify a URL to install from"
         return -1
-    binary_url = sys.argv[3]
+    binary_url = args[1]
 
-    depdir = data_path(depname)
-    installdir = data_path(depname, config.install_dir_name)
+    depdir = package_path(packname)
+    installdir = package_path(packname, config.install_dir_name)
 
     tempdir = os.path.join(tempfile.gettempdir(), 'sirikata-deploy-' + str(datetime.datetime.now().time()))
     os.mkdir(tempdir)
@@ -131,11 +153,10 @@ def command_install():
             subdirs = [x for x in os.listdir(curdir) if os.path.isdir(os.path.join(curdir, x))]
             if 'bin' in subdirs:
                 break
-            print curdir, os.listdir(curdir), subdirs
             assert(len(subdirs) == 1)
             curdir = os.path.join(curdir, subdirs[0])
         # Now swap the directory we found into place
-        shutil.rmtree(installdir)
+        if os.path.exists(installdir): shutil.rmtree(installdir)
         shutil.move(curdir, installdir)
         # Cleanup
         shutil.rmtree(tempdir)
@@ -144,41 +165,59 @@ def command_install():
 
 
 
-def command_help(args=None):
+
+
+
+# Drivers
+
+def decode_command(*args):
+    '''
+    Try to decode the command and return a tuple of the command method
+    and the remaining arguments. If decoding fails, returns a tuple
+    containing None.
+    '''
+    if len(args) == 0:
+        print "Usage: admin command-name [options]"
+        return (None, None)
+
+    cmd = args[0]
+    cmd_fname = 'command_' + cmd
+    if cmd_fname in globals():
+        return ( globals()[cmd_fname], args[1:] )
+
+    if len(args) > 1:
+        cmd_fname = 'command_' + '_'.join(args[:2])
+        if cmd_fname in globals():
+            return ( globals()[cmd_fname], args[2:] )
+
+    print "Command not found:", args[0]
+    return (None, None)
+
+
+def command_help(*args):
     """
     admin help command-name
 
     Get help about a given command.
     """
 
-    if args is None: args = sys.argv[2:]
-
     if len(args) == 0:
         print "Usage: admin help command-name"
         return -1
 
-    cmd = args[0]
-    cmd_fname = 'command_' + cmd
-    if cmd_fname not in globals():
-        print "Command not found:", cmd
+    cmd, rest_args = decode_command(*args)
+    if cmd is None:
+        print "Command not found:", args
         return -1
 
-    print globals()[cmd_fname].__doc__
+    print cmd.__doc__
 
     return 0
 
 def main():
-    if len(sys.argv) == 1:
-        print "Usage: admin command-name [options]"
-        return -1
-
-    cmd = sys.argv[1]
-    cmd_fname = 'command_' + cmd
-    if cmd_fname not in globals():
-        print "Command not found:", cmd
-        return -1
-
-    return globals()[cmd_fname]()
+    cmd, rest_args = decode_command(*(sys.argv[1:]))
+    if cmd is None: return -1
+    return cmd(*rest_args)
 
 if __name__ == "__main__":
     sys.exit(main())
