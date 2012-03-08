@@ -19,3 +19,11 @@ def load_config(mod, *args):
     e.g. load_config(packageconfig, 'foo', 'bar') loads data_base/foo/bar/config.py
     """
     mod.load_config( data_path(os.path.join(*args), 'config.py') )
+
+
+def template_path(template, *args):
+    """
+    Get path to a template directory or file. Just wraps
+    os.path.join.
+    """
+    return os.path.join(os.getcwd(), 'templates', template, *args)

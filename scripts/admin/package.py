@@ -19,7 +19,8 @@ def package_load_config(package):
     """
     util.load_config(packageconfig, 'packages', package)
 
-
+def install_dir(packname):
+    return package_path(packname, packageconfig.install_dir_name)
 
 # Package commands
 
@@ -36,7 +37,7 @@ def command_package_init(*args):
 
     if len(args) == 0:
         print 'No package name specified'
-        return -1
+        return 1
     packname = args[0]
 
     # Setup build, install, and data directories
@@ -59,14 +60,14 @@ def command_package_build(*args):
 
     if len(args) == 0:
         print 'No package name specified'
-        return -1
+        return 1
     packname = args[0]
     package_load_config(packname)
 
     builddir = package_path(packname, packageconfig.build_dir_name)
     depsdir = os.path.join(builddir, 'dependencies')
     buildcmakedir = os.path.join(builddir, 'build', 'cmake')
-    installdir = package_path(packname, packageconfig.install_dir_name)
+    installdir = install_dir(packname)
 
     try:
         # If nothing is there yet, do checkout and build dependencies
@@ -84,8 +85,9 @@ def command_package_build(*args):
         subprocess.check_call(['make'] + packageconfig.additional_make_args, cwd=buildcmakedir)
         subprocess.check_call(['make', 'install'] + packageconfig.additional_make_args, cwd=buildcmakedir)
     except subprocess.CalledProcessError:
-        return -1
+        return 1
 
+    return 0
 
 def command_package_install(*args):
     """
@@ -97,13 +99,13 @@ def command_package_install(*args):
 
     if len(args) == 0:
         print 'No package name specified'
-        return -1
+        return 1
     packname = args[0]
     package_load_config(packname)
 
     if len(args) < 2:
         print "Must specify a URL to install from"
-        return -1
+        return 1
     binary_url = args[1]
 
     depdir = package_path(packname)
@@ -123,7 +125,7 @@ def command_package_install(*args):
             subprocess.check_call(['unzip', fname], cwd=tempdir)
         else:
             print "Don't know how to extract file", fname
-            return -1
+            return 1
 
         # Figure out where the actual install is since archives
         # frequently have a layer of extra directories
@@ -140,8 +142,9 @@ def command_package_install(*args):
         # Cleanup
         shutil.rmtree(tempdir)
     except subprocess.CalledProcessError:
-        return -1
+        return 1
 
+    return 0
 
 def command_package_destroy(*args):
     """
@@ -152,13 +155,13 @@ def command_package_destroy(*args):
 
     if len(args) == 0:
         print 'No package name specified'
-        return -1
+        return 1
     packname = args[0]
     package_load_config(packname)
 
     packdir = package_path(packname)
     if not os.path.exists(packdir):
-        return -1
+        return 1
 
     shutil.rmtree(packdir)
     return 0
