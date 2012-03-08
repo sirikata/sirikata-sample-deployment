@@ -1,0 +1,4 @@
+"objtype","pos_x","pos_y","pos_z","scale","meshURI","script_type","script_contents","solid_angle","physics"
+"mesh",0,0,0,2000,"meerkat:///echeslack/simple_terrain.dae/optimized/0/simple_terrain.dae",,,,"{"treatment":"static", "bounds":"triangles"}"
+"mesh",0,0,0,1,"","js","system.import('generate.em');",,""
+"mesh",20,20,0,20,"meerkat:///bmistree/models/model.dae/optimized/6/model.dae","js","system.import('test/testBirthingTower.em');",,""
