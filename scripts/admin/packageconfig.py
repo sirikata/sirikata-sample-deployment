@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-# This module contains default settings for deployments. You can
+# This module contains default settings for packages. You can
 # override these in a deployment by redefining these values in your
-# deployments config.py.
+# package's config.py.
 
 
 # Repository to work with
