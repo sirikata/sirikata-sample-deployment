@@ -141,3 +141,24 @@ def command_package_install(*args):
         shutil.rmtree(tempdir)
     except subprocess.CalledProcessError:
         return -1
+
+
+def command_package_destroy(*args):
+    """
+    admin package destroy package_name
+
+    Destroy a package, i.e. remove all its contents from the filesystem.
+    """
+
+    if len(args) == 0:
+        print 'No package name specified'
+        return -1
+    packname = args[0]
+    package_load_config(packname)
+
+    packdir = package_path(packname)
+    if not os.path.exists(packdir):
+        return -1
+
+    shutil.rmtree(packdir)
+    return 0
