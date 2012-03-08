@@ -101,6 +101,26 @@ package = '%s'
     return 0
 
 
+def get_run_params(*args):
+    class Params(object):
+        pass
+
+    # Load and validate config
+    servname = args[0]
+    service_validate_config(servname)
+
+    result = Params()
+
+    result.name = servname
+    result.work_dir = service_path(servname)
+    result.pidfile = service_path(servname, 'pid')
+
+    result.installdir = package.install_dir(serviceconfig.package)
+    result.bindir = os.path.join(result.installdir, 'bin')
+    result.binfile = os.path.join(result.bindir, serviceconfig.binary)
+
+    return result
+
 def command_service_start(*args):
     '''
     admin service start service_name
@@ -110,27 +130,18 @@ def command_service_start(*args):
     if len(args) == 0:
         print 'No service name specified'
         return 1
-    servname = args[0]
-    # Load and validate config
-    service_validate_config(servname)
-
-    work_dir = service_path(servname)
-    pidfile = service_path(servname, 'pid')
-
-    installdir = package.install_dir(serviceconfig.package)
-    bindir = os.path.join(installdir, 'bin')
-    binfile = os.path.join(bindir, serviceconfig.binary)
+    params = get_run_params(*args)
 
     args = []
     if serviceconfig.args:
         args += ['--'] + serviceconfig.args
 
     cmd = ['start-stop-daemon', '--start', '--quiet', '--background',
-           '--chdir', work_dir,
-           '--pidfile', pidfile, '--make-pidfile',
-           '--exec', binfile]
+           '--chdir', params.work_dir,
+           '--pidfile', params.pidfile, '--make-pidfile',
+           '--exec', params.binfile]
     cmd += args
-    return subprocess.call(cmd, cwd=work_dir)
+    return subprocess.call(cmd, cwd=params.work_dir)
 
 
 def command_service_stop(*args):
@@ -142,15 +153,29 @@ def command_service_stop(*args):
     if len(args) == 0:
         print 'No service name specified'
         return 1
-    servname = args[0]
-    # Load and validate config
-    service_validate_config(servname)
+    params = get_run_params(*args)
 
-    work_dir = service_path(servname)
-    pidfile = service_path(servname, 'pid')
+    cmd = ['start-stop-daemon', '--stop', '--retry', '10', '--quiet', '--pidfile', params.pidfile]
+    return subprocess.call(cmd, cwd=params.work_dir)
 
-    cmd = ['start-stop-daemon', '--stop', '--retry', '10', '--quiet', '--pidfile', pidfile]
-    return subprocess.call(cmd, cwd=work_dir)
+
+def command_service_debug(*args):
+    '''
+    admin service debug service_name
+
+    Start a service running under gdb so you can debug it. This
+    doesn't add any of the wrappers provided by the normal service
+    start/stop commands
+    '''
+    if len(args) == 0:
+        print 'No service name specified'
+        return 1
+    params = get_run_params(*args)
+
+    cmd = [params.binfile, '--debug']
+    if serviceconfig.args:
+        cmd += serviceconfig.args
+    return subprocess.call(cmd, cwd=params.work_dir)
 
 
 def command_service_destroy(*args):
