@@ -1,3 +1,10 @@
+'''
+A service is one component of a running Sirikata system, e.g. a single
+space server, object host, pinto or cseg server. Each service must be
+uniquely named and gets isolated storage where it is executed. Usually
+a service will be based on a template.
+'''
+
 import util
 import serviceconfig
 import package

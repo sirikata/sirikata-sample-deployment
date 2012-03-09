@@ -6,6 +6,7 @@ import util
 # Get commands from other modules
 from package import *
 from service import *
+from template import *
 
 # Drivers
 def decode_command(*args):
