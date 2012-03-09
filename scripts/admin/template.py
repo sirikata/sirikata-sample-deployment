@@ -91,11 +91,35 @@ def command_template_init(*args):
             print "Service directory", os.path.join(prefix, s.name), "already exists."
             return 1
 
+    return command_template_reinit(*args, notre=True)
+
+def command_template_reinit(*args, **kwargs):
+    '''
+    admin template reinit prefix template_name package
+
+    Reinstantiate a template over an existing instantiation. It
+    performs the same steps as template init but leaves existing data
+    in place.
+    '''
+    if len(args) < 3:
+        print "Must specify at least template name and service prefix"
+        return 1
+
+    prefix = args[0]
+    template = args[1]
+    package = args[2]
+
+    if not validate_template_config(template):
+        return 1
+
     # Then instantiate each of them
     svcs = templateconfig.services
     for s in svcs:
         servname = os.path.join(prefix, s.name)
-        service.command_service_init(*[servname, package, os.path.join(template, s.source)])
+        if 'notre' in kwargs and kwargs['notre']:
+            service.command_service_init(*[servname, package, os.path.join(template, s.source)])
+        else:
+            service.command_service_reinit(*[servname, package, os.path.join(template, s.source)])
 
     # Copy the template configuration in so we can make sure we keep the same setup
     shutil.copy(template_path(template, 'template.py'), service.service_path(prefix))

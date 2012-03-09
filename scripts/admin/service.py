@@ -85,14 +85,51 @@ def command_service_init(*args):
         print "Can't create service", servname, ": already exists"
         return 1
 
-    # Copy in template items. We do this first so we can do a simple
-    # copy. Then we'll rejigger the config
-    shutil.copytree( util.template_path(template), service_path(servname) )
-    serv_config_py = service_path(servname, 'config.py')
-    if os.path.exists(serv_config_py): os.remove(serv_config_py)
+    return command_service_reinit(*args)
 
-    # Generate config file. We need to insert the referenced package
-    # and optionally include the template config
+
+def command_service_reinit(*args):
+    '''
+    admin service reinit service_name package [template/path/]
+
+    Reinitialize a service directory, which does what init does but
+    will overwrite any existing files. This keeps data in place so
+    data can be preserved if the corresponding files haven't changed,
+    but the service is forced into a state to match the template
+    service.
+    '''
+
+    if len(args) < 2:
+        print "Must specify at least service name and package."
+        return 1
+
+    servname = args[0]
+    packname = args[1]
+    template = None
+    if len(args) > 2:
+        template = args[2]
+        if not os.path.exists(util.template_path(template)):
+            print "Couldn't find template", template
+            return 1
+
+    # Copy in template items. To support both init and reinit we:
+    # 1. Make sure we have the top level directory
+    serv_path = service_path(servname)
+    if not os.path.exists(serv_path): os.makedirs(serv_path)
+    # 2. Copy all the contents of the template in, excluding the config
+    template_dir = util.template_path(template)
+    for fi in os.listdir(template_dir):
+        if fi != 'config.py':
+            template_fi = os.path.join(template_dir, fi)
+            serv_fi = os.path.join(serv_path, fi)
+            if os.path.isdir(template_fi):
+                shutil.copytree(template_fi, serv_fi)
+            else:
+                shutil.copy(template_fi, serv_fi)
+
+    # Write or overwrite the config file. We need to insert the
+    # referenced package and optionally include the template config
+    serv_config_py = service_path(servname, 'config.py')
     config_py_file = open(serv_config_py, 'w')
     config_py_file.write("""
 package = '%s'
@@ -106,7 +143,6 @@ package = '%s'
     config_py_file.close()
 
     return 0
-
 
 def get_run_params(*args):
     class Params(object):
