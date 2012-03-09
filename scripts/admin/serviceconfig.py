@@ -20,4 +20,13 @@ args = []
 # This is the only method exported from this module, allowing scripts
 # to point the module at other configurations it should load
 def load_config(path):
+    # By setting defaults in here and marking them as global, we
+    # guarantee a clean reset if the same process parses a new set of
+    # options
+
+    global package, binary, args
+    package = None
+    binary = None
+    args = []
+
     exec open(path, 'r') in globals()
