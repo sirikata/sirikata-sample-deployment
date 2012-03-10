@@ -8,6 +8,7 @@ a service will be based on a template.
 import util
 import serviceconfig
 import package
+import monit
 
 import os.path, subprocess, shutil
 
@@ -144,12 +145,11 @@ package = '%s'
 
     return 0
 
-def get_run_params(*args):
+def get_run_params(servname):
     class Params(object):
         pass
 
     # Load and validate config
-    servname = args[0]
     service_validate_config(servname)
 
     result = Params()
@@ -164,11 +164,14 @@ def get_run_params(*args):
 
     return result
 
-def command_service_start(*args):
+def command_service_rawstart(*args):
     '''
-    admin service start service_name
+    admin service rawstart service_name
 
-    Start a service running
+    Start a service running. This is the 'raw' version, which doesn't
+    deal with any wrappers like monit. It just starts the daemon
+    running. You generally shouldn't need to use this, it's just a
+    utility command.
     '''
     if len(args) == 0:
         print 'No service name specified'
@@ -186,6 +189,37 @@ def command_service_start(*args):
     cmd += args
     return subprocess.call(cmd, cwd=params.work_dir)
 
+def command_service_rawstop(*args):
+    '''
+    admin service rawstop service_name
+
+    Stop a currently running service. This is a raw version which
+    doesn't handle any wrappers like monit. Generally it should only
+    be used internally.
+    '''
+    if len(args) == 0:
+        print 'No service name specified'
+        return 1
+    params = get_run_params(*args)
+
+    cmd = ['start-stop-daemon', '--stop', '--retry', '10', '--quiet', '--pidfile', params.pidfile]
+    return subprocess.call(cmd, cwd=params.work_dir)
+
+def command_service_start(*args):
+    '''
+    admin service start service_name
+
+    Start a service running
+    '''
+    if len(args) == 0:
+        print 'No service name specified'
+        return 1
+    params = get_run_params(*args)
+
+    if serviceconfig.monit:
+        monit.start_service(args[0])
+    else:
+        command_service_rawstart(*args)
 
 def command_service_stop(*args):
     '''
@@ -198,8 +232,10 @@ def command_service_stop(*args):
         return 1
     params = get_run_params(*args)
 
-    cmd = ['start-stop-daemon', '--stop', '--retry', '10', '--quiet', '--pidfile', params.pidfile]
-    return subprocess.call(cmd, cwd=params.work_dir)
+    if serviceconfig.monit:
+        monit.stop_service(args[0])
+    else:
+        command_service_rawstop(*args)
 
 
 def command_service_debug(*args):

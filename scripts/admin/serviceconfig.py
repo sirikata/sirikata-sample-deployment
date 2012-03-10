@@ -16,6 +16,8 @@ binary = None
 # --cfg=foo.cfg here
 args = []
 
+# Whether to run under monit
+monit = False
 
 # This is the only method exported from this module, allowing scripts
 # to point the module at other configurations it should load
@@ -24,9 +26,10 @@ def load_config(path):
     # guarantee a clean reset if the same process parses a new set of
     # options
 
-    global package, binary, args
+    global package, binary, args, monit
     package = None
     binary = None
     args = []
+    monit = False
 
     exec open(path, 'r') in globals()

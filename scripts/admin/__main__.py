@@ -7,6 +7,7 @@ import util
 from package import *
 from service import *
 from template import *
+from monit import *
 
 # Drivers
 def decode_command(*args):
