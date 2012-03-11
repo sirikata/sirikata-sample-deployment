@@ -154,4 +154,4 @@ Getting Help
 
 If you need details on any command, use the help command, e.g.:
 
-   python scripts/admin help package install
+    python scripts/admin help package install
