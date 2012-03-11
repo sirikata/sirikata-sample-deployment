@@ -51,7 +51,7 @@ def command_package_init(*args):
 
 def command_package_build(*args):
     """
-    admin build deployment_name
+    admin package build deployment_name
 
     Build the given deployment, generating the installed
     version. Unless the deployment is bare, this doesn't do anything
@@ -91,7 +91,7 @@ def command_package_build(*args):
 
 def command_package_install(*args):
     """
-    admin install deployment_name url
+    admin package install deployment_name url
 
     Install a prebuilt version of Sirikata locally (as opposed to
     building and installing locally.
