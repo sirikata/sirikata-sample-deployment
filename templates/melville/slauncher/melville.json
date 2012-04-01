@@ -1,0 +1,30 @@
+{
+    "app" :
+    {
+        "name" : "melville",
+        "directory" : "melville",
+        "files" :
+        {
+            "appGui.em" : "appGui.em",
+            "convGUI.em" : "convGUI.em",
+            "group.em" : "group.em",
+            "melvilleAvatar.em" : "melvilleAvatar.em",
+            "roomGui.em" : "roomGui.em",
+            "avatar.db" : "avatar.db",
+            "friend.em" : "friend.em",
+            "imUtil.em" : "imUtil.em",
+            "room.em" : "room.em",
+            "test.em" : "test.em"
+        }
+    },
+    "binary" :
+    {
+        "name" : "cppoh",
+        "args" :
+        {
+            "object-factory-opts" : "--db=avatar.db",
+            "servermap": "local",
+            "servermap-options": "--host=FILLMEIN_HOSTNAME --port=FILLMEIN_PORT"
+        }
+    }
+}
