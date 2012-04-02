@@ -22,6 +22,7 @@
         "name" : "cppoh",
         "args" :
         {
+            "log-file" : "melville.log",
             "object-factory-opts" : "--db=avatar.db",
             "servermap": "local",
             "servermap-options": "--host=FILLMEIN_HOSTNAME --port=FILLMEIN_PORT"
