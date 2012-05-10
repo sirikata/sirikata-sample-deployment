@@ -13,6 +13,12 @@ import monit
 import os.path, subprocess, shutil
 
 # Utilities
+def services_path():
+    '''
+    Get path to the services data directory.
+    '''
+    return util.data_path('service')
+
 def service_path(service, *args):
     '''
     Get path to a service data directory or file.
@@ -23,7 +29,7 @@ def service_load_config(service):
     """
     Load the configuration for the given service
     """
-    util.load_config(serviceconfig, 'service', service)
+    return util.load_config(serviceconfig, 'service', service)
 
 
 
@@ -32,7 +38,8 @@ def service_validate_config(service):
     Validate basic configuration options exist and are valid for the
     given service.
     """
-    service_load_config(service)
+    if not service_load_config(service):
+        return 1
 
     # Package
     if not serviceconfig.package:
@@ -144,6 +151,40 @@ package = '%s'
     config_py_file.close()
 
     return 0
+
+
+def command_service_ls(*args):
+    """
+    admin service ls
+
+    List services found in this deployments data directory. A * is
+    appended if the configuration for the service validates.
+    """
+
+    # Services, unlike templates and packages, can appear at different
+    # depths in the tree, so we need to do a full walk looking for
+    # configs.
+    services_dirs = [dirpath for (dirpath,dirnames,filenames) in os.walk(services_path()) if 'config.py' in filenames]
+
+    for servpath in services_dirs:
+        # We need to extract the service name, which could be a
+        # compound of multiple dirs. Grab everything after the path
+        # giving the base of the services directory (+ an extra /)
+        assert(servpath.startswith(services_path()))
+        servname = servpath[len(services_path())+1:]
+
+        # Filter to directories with config files.
+        if not os.path.isdir(service_path(servname)): continue
+        if not service_load_config(servname): continue
+
+        validates_flag = ''
+        if service_validate_config(servname) is True:
+            validates_flag = '*'
+
+        print servname, validates_flag
+
+    return 0
+
 
 def get_run_params(servname):
     class Params(object):

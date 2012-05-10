@@ -32,4 +32,8 @@ def load_config(path):
     args = []
     monit = False
 
+    import os.path
+    if not os.path.exists(path):
+        return False
     exec open(path, 'r') in globals()
+    return True

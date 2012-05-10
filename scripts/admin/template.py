@@ -20,19 +20,26 @@ import service
 import os, shutil, time
 
 # Template utilities
+
+def templates_path():
+    """
+    Get path to the templates directory.
+    """
+    return os.path.join(os.getcwd(), 'templates')
+
 template_path = util.template_path
 
 def template_load_config(template):
     """
     Load the configuration for the given template
     """
-    templateconfig.load_config(template_path(template, 'template.py'))
+    return templateconfig.load_config(template_path(template, 'template.py'))
 
 def template_load_instance_config(prefix):
     """
     Load the configuration for an instance with the given prefix
     """
-    templateconfig.load_config(service.service_path(prefix, 'template.py'))
+    return templateconfig.load_config(service.service_path(prefix, 'template.py'))
 
 def validate_config():
     if templateconfig.services is None:
@@ -123,6 +130,31 @@ def command_template_reinit(*args, **kwargs):
 
     # Copy the template configuration in so we can make sure we keep the same setup
     shutil.copy(template_path(template, 'template.py'), service.service_path(prefix))
+
+
+def command_template_ls(*args):
+    """
+    admin template ls
+
+    List templates found in this deployments data directory. Adds a *
+    if the template configuration validates.
+    """
+
+    # Setup build, install, and data directories
+    templates_dirs = os.listdir(templates_path())
+
+    for tempname in templates_dirs:
+        # Filter to directories with config files that validate
+        if not os.path.isdir(template_path(tempname)): continue
+        if not template_load_config(tempname): continue
+
+        validates_flag = ''
+        if validate_template_config(tempname):
+            validates_flag = '*'
+
+        print tempname, validates_flag
+
+    return 0
 
 
 def command_template_start(*args):

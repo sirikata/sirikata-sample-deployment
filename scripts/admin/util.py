@@ -18,7 +18,7 @@ def load_config(mod, *args):
     Load the configuration from the given data path,
     e.g. load_config(packageconfig, 'foo', 'bar') loads data_base/foo/bar/config.py
     """
-    mod.load_config( data_path(os.path.join(*args), 'config.py') )
+    return mod.load_config( data_path(os.path.join(*args), 'config.py') )
 
 
 def template_path(template, *args):

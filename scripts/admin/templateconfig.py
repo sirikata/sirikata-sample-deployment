@@ -33,4 +33,9 @@ def load_config(path):
 
     global services
     services = None
+
+    import os.path
+    if not os.path.exists(path):
+        return False
     exec open(path, 'r') in globals()
+    return True

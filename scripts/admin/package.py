@@ -7,6 +7,12 @@ import datetime
 import shutil
 
 # Package utilities
+def packages_path(*args):
+    '''
+    Get path to the packages directory.
+    '''
+    return util.data_path('packages')
+
 def package_path(package, *args):
     '''
     Get path to a package data directory or file.
@@ -17,7 +23,7 @@ def package_load_config(package):
     """
     Load the configuration for the given package
     """
-    util.load_config(packageconfig, 'packages', package)
+    return util.load_config(packageconfig, 'packages', package)
 
 def install_dir(packname):
     return package_path(packname, packageconfig.install_dir_name)
@@ -46,6 +52,37 @@ def command_package_init(*args):
     # Touch an empty config.py where the user can adjust settings
     config_py_file = open(package_path(packname, 'config.py'), 'w')
     config_py_file.close()
+
+    return 0
+
+def command_package_ls(*args):
+    """
+    admin package ls
+
+    List packages found in this deployments data directory. Includes a
+    * if they appear to be properly built/installed.
+    """
+
+    # Setup build, install, and data directories
+    package_dirs = os.listdir(packages_path())
+
+    for packname in package_dirs:
+        # Filter to directories with config files
+        if not os.path.isdir(package_path(packname)): continue
+        if not package_load_config(packname): continue
+
+        # Check for installation
+        installed_flag = ''
+        installdir = install_dir(packname)
+        bindir = os.path.join(installdir, 'bin')
+        # This is just a very basic sanity check for binaries we
+        # require
+        binfiles = (os.path.exists(bindir) and os.listdir(bindir)) or []
+        if ( ('space' in binfiles or 'space_d' in binfiles) and
+             ('cppoh' in binfiles or 'cppoh_d' in binfiles) ):
+            installed_flag = '*'
+
+        print packname, installed_flag
 
     return 0
 

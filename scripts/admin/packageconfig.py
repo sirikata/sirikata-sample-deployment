@@ -39,4 +39,8 @@ def load_config(path):
     additional_cmake_args = []
     additional_make_args = ['-j2']
 
+    import os.path
+    if not os.path.exists(path):
+        return False
     exec open(path, 'r') in globals()
+    return True
