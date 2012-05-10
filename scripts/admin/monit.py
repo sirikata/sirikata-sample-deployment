@@ -31,7 +31,7 @@ def monitize_name(n):
 def base_config():
     '''Get the basic monit config, which should go at the head of the file'''
     return """
-set daemon 15
+set daemon 120
 set logfile %(logfile)s
 set httpd port 2812
  use address localhost
