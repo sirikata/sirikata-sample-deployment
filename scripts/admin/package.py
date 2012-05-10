@@ -125,8 +125,18 @@ def command_package_build(*args):
         subprocess.check_call(['make', 'update-dependencies'], cwd=builddir)
         subprocess.check_call(['make'] + packageconfig.dependencies_targets, cwd=depsdir)
 
+        # We need to select whether to use cmake with tools (ccache),
+        # or just bare cmake. Using ccache in some setups can be
+        # counterproductive, and if we add support for things like
+        # distcc/icecream, we'll probably want to filter in some other
+        # conditions. These are heuristics for choosing whether or not
+        # to use ccache.
+        cmake_cmd = './cmake_with_tools.sh'
+        if 'nfs' in subprocess.Popen(['mount'], stdout=subprocess.PIPE).communicate()[0].split():
+            cmake_cmd = 'cmake'
+
         # Normal build process
-        subprocess.check_call(['./cmake_with_tools.sh',
+        subprocess.check_call([cmake_cmd,
                                '-DCMAKE_INSTALL_PREFIX='+installdir,
                                '-DCMAKE_BUILD_TYPE='+packageconfig.build_type]
                               + packageconfig.additional_cmake_args + ['.'],
