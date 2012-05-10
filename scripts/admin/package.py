@@ -135,7 +135,8 @@ def command_package_build(*args):
         if 'nfs' in subprocess.Popen(['mount'], stdout=subprocess.PIPE).communicate()[0].split():
             cmake_cmd = 'cmake'
 
-        # Normal build process
+        # Normal build process, making sure we clean out any previous config
+        subprocess.check_call(['rm', '-f', 'CMakeCache.txt'], cwd=buildcmakedir)
         subprocess.check_call([cmake_cmd,
                                '-DCMAKE_INSTALL_PREFIX='+installdir,
                                '-DCMAKE_BUILD_TYPE='+packageconfig.build_type]
