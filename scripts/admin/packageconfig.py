@@ -26,6 +26,13 @@ def load_config(path):
     global dependencies_targets
     dependencies_targets = ['minimal-depends', 'installed-bullet', 'installed-opencollada', 'installed-v8', 'installed-nvtt', 'installed-libcassandra', 'installed-hiredis']
 
+    # Branch/version settings
+    global version
+    # version should be a valid 'tree-ish' reference for git, e.g. a
+    # local branch ('master'), remote branch ('origin/master'), tag
+    # ('v0.0.1'), git commit ID ('a74568ab'), etc.
+    version = 'origin/master'
+
     # Build settings
     global build_type, additional_cmake_args, additional_make_args
     build_type = 'Debug'

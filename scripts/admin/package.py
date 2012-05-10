@@ -70,11 +70,23 @@ def command_package_build(*args):
     installdir = install_dir(packname)
 
     try:
-        # If nothing is there yet, do checkout and build dependencies
+        # If nothing is there yet, do checkout and build
+        # dependencies. Otherwise, just make sure our repo is fully
+        # up-to-date.
         if not os.path.exists(package_path(packname, packageconfig.build_dir_name, '.git')):
             subprocess.check_call(['git', 'clone', packageconfig.repository, package_path(packname, packageconfig.build_dir_name)])
-            subprocess.check_call(['make', 'update-dependencies'], cwd=builddir)
-            subprocess.check_call(['make'] + packageconfig.dependencies_targets, cwd=depsdir)
+        else:
+            subprocess.check_call(['git', 'fetch', 'origin'], cwd=builddir)
+
+        # Make sure we're on the requested branch
+        subprocess.check_call(['git', 'checkout', packageconfig.version], cwd=builddir)
+
+        # We always need to make sure deps are up to date, either for
+        # a fresh checkout or because we may have switched
+        # branches/versions. This includes making sure the submodules
+        # are up to date.
+        subprocess.check_call(['make', 'update-dependencies'], cwd=builddir)
+        subprocess.check_call(['make'] + packageconfig.dependencies_targets, cwd=depsdir)
 
         # Normal build process
         subprocess.check_call(['./cmake_with_tools.sh',
