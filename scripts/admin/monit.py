@@ -64,7 +64,7 @@ check process %(monit_name)s
  with pidfile "%(pidfile)s"
  start program = "%(startcommand)s" with timeout 60 seconds
  stop program = "%(stopcommand)s"
- if 2 restarts within 3 cycles then timeout
+ if 4 restarts within 5 cycles then timeout
 """ % {
         'name' : params.name,
         'monit_name' : monitize_name(params.name),
